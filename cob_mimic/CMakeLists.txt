@@ -6,6 +6,9 @@ find_package(PkgConfig REQUIRED)
 find_package(Boost REQUIRED COMPONENTS filesystem thread)
 pkg_check_modules(libvlc REQUIRED libvlc)
 
+set(CMAKE_CXX_COMPILER "clang++")
+set(CMAKE_C_COMPILER "clang") 
+
 ### Message Generation ###
 add_service_files(DIRECTORY srv FILES
   SetMimic.srv
