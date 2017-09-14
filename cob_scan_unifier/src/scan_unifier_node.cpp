@@ -30,7 +30,10 @@ ScanUnifierNode::ScanUnifierNode()
   topicPub_LaserUnified_ = nh_.advertise<sensor_msgs::LaserScan>("scan_unified", 1);
 
   getParams();
-
+  
+  p_tfBuffer = new tf2_ros::Buffer();
+  p_tfListener = new tf2_ros::TransformListener(*p_tfBuffer, true);
+  
   // Subscribe to Laserscan topics
 
   for(int i = 0; i < config_.number_input_scans; i++)
@@ -152,7 +155,10 @@ void ScanUnifierNode::messageFilterCallback(const sensor_msgs::LaserScan::ConstP
  */
 bool ScanUnifierNode::unifyLaserScans(std::vector<sensor_msgs::LaserScan::ConstPtr> current_scans, sensor_msgs::LaserScan &unified_scan)
 {
+  std::vector<sensor_msgs::PointCloud2> vec_cloud2;
   std::vector<sensor_msgs::PointCloud> vec_cloud;
+  geometry_msgs::TransformStamped transform;
+  vec_cloud2.assign(config_.number_input_scans, sensor_msgs::PointCloud2());
   vec_cloud.assign(config_.number_input_scans, sensor_msgs::PointCloud());
 
   if(!current_scans.empty())
@@ -163,20 +169,21 @@ bool ScanUnifierNode::unifyLaserScans(std::vector<sensor_msgs::LaserScan::ConstP
       vec_cloud.at(i).header.stamp = current_scans.at(i)->header.stamp;
       ROS_DEBUG_STREAM("Converting scans to point clouds at index: " << i << ", at time: " << current_scans.at(i)->header.stamp << " now: " << ros::Time::now());
       try
-      {
-        if (!listener_.waitForTransform(frame_, current_scans.at(i)->header.frame_id,
-                                        current_scans.at(i)->header.stamp, ros::Duration(1.0)))
-        {
-          ROS_WARN_STREAM("Scan unifier skipped scan with " << current_scans.at(i)->header.stamp << " stamp, because of missing tf transform.");
-          return false;
+     {
+        transform = p_tfBuffer->lookupTransform(frame_, current_scans.at(i)->header.frame_id, current_scans.at(i)->header.stamp, ros::Duration(1.0));
+	    _num_transform_errors = 0;
+     }
+     catch (tf2::TransformException ex)
+     {
+        if (_num_transform_errors%100 == 0){
+	    ROS_ERROR("%s", ex.what());
         }
-
-        ROS_DEBUG("now project to point_cloud");
-        projector_.transformLaserScanToPointCloud(frame_,*current_scans.at(i), vec_cloud.at(i), listener_);
-      }
-      catch(tf::TransformException &ex){
-        ROS_ERROR("%s",ex.what());
-      }
+        _num_transform_errors++;
+        return false;
+     }
+     ROS_DEBUG("now project to point_cloud");
+     projector_.transformLaserScanToPointCloud(frame_,*current_scans.at(i), vec_cloud2.at(i), *p_tfBuffer);
+     if(!sensor_msgs::convertPointCloud2ToPointCloud(vec_cloud2.at(i),vec_cloud.at(i))) return false;
     }
     ROS_DEBUG("Creating message header");
     unified_scan.header = current_scans.at(0)->header;
