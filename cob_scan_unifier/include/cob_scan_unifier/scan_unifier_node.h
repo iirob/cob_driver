@@ -95,8 +95,6 @@ class ScanUnifierNode
     // declaration of ros publishers
     ros::Publisher topicPub_LaserUnified_;
 
-    // tf listener
-    //tf::TransformListener listener_;
     tf2_ros::Buffer *p_tfBuffer;
     tf2_ros::TransformListener *p_tfListener;
     uint _num_transform_errors;
