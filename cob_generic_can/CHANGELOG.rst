@@ -2,6 +2,35 @@
 Changelog for package cob_generic_can
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.12 (2018-07-21)
+-------------------
+
+0.6.11 (2018-01-07)
+-------------------
+* Merge remote-tracking branch 'origin/indigo_release_candidate' into indigo_dev
+* Merge pull request `#341 <https://github.com/ipa320/cob_driver/issues/341>`_ from ipa-fxm/APACHE_license
+  use license apache 2.0
+* use license apache 2.0
+* Contributors: Felix Messmer, ipa-fxm, ipa-uhr-mk
+
+0.6.10 (2017-07-24)
+-------------------
+
+0.6.9 (2017-07-18)
+------------------
+* SocketCAN support (`#269 <https://github.com/ipa320/cob_driver/issues/269>`_)
+  * SocketCAN finished implementaiton.
+  * Licence update and formating.
+  * Run socketcan_interface in the new thread.
+  * Removed cmake_modules for boost.
+  * Thread initialisation moved to front and added sleep to let enough time to start the thread since this caused problems in some cases (on some computers).
+  * Using ThreadedSocketCANInterface.
+  * BufferedReader working
+  * Updated dependecies and removed initCAN() function.
+  * Clean SocketCAN implementation and set Timeout to correct unit (MicroSeconds)
+* manually fix changelog
+* Contributors: Denis Štogl, ipa-fxm
+
 0.6.8 (2016-10-10)
 ------------------
 

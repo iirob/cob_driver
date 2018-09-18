@@ -2,6 +2,69 @@
 Changelog for package cob_mimic
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.12 (2018-07-21)
+-------------------
+* update maintainer
+* Merge pull request `#375 <https://github.com/ipa320/cob_driver/issues/375>`_ from fmessmer/bulletproof_mimic
+  bulletproof mimic
+* bulletproof mimic
+* Merge pull request `#371 <https://github.com/ipa320/cob_driver/issues/371>`_ from fmessmer/mimic_play_nondefault_mimics
+  allow to play non-default mimics by specifying full filepath
+* allow to play non-default mimics by specifying full filepath
+* Contributors: Felix Messmer, fmessmer, ipa-fxm
+
+0.6.11 (2018-01-07)
+-------------------
+* Merge remote-tracking branch 'origin/indigo_release_candidate' into indigo_dev
+* Merge pull request `#359 <https://github.com/ipa320/cob_driver/issues/359>`_ from ipa-bnm/fix/mimic
+  [cob_mimic] use glx/opengl output for mimic
+* use glx/opengl output for mimic, fixes mimic issue for 6th and 7th gen nuc
+* Merge pull request `#354 <https://github.com/ipa320/cob_driver/issues/354>`_ from ipa-bnm/feature/mimic
+  [Mimic] improvements
+* Merge pull request `#353 <https://github.com/ipa320/cob_driver/issues/353>`_ from ipa-fxm/update_maintainer
+  update maintainer
+* Merge pull request `#356 <https://github.com/ipa320/cob_driver/issues/356>`_ from ipa-nhg/MimicPy
+  HotFix: readded python node for mimic
+* remove duplicated test_mimic.py install tag
+* use the old driver
+* readded python node for mimic
+* do not start blinking timer on sleeping or falling_asleep requests
+* added random mimics
+* double check username
+* update maintainer
+* Merge pull request `#341 <https://github.com/ipa320/cob_driver/issues/341>`_ from ipa-fxm/APACHE_license
+  use license apache 2.0
+* Merge pull request `#352 <https://github.com/ipa320/cob_driver/issues/352>`_ from ipa-bnm/feature/mimic_sim
+  Do not run mimic in fullscreen if sim is enabled
+* use license apache 2.0
+* Merge branch 'indigo_dev' of github.com:ipa320/cob_driver into feature/mimic_sim
+* no fullscreen if sim enabled
+* Merge pull request `#345 <https://github.com/ipa320/cob_driver/issues/345>`_ from ipa-fxm/fix_mimic_permission
+  guarantee unique copy destinations
+* guarantee unique copy destinations
+* Contributors: Benjamin Maidel, Felix Messmer, Florian Weisshardt, Nadia Hammoudeh García, ipa-fxm, ipa-nhg, ipa-uhr-mk
+
+0.6.10 (2017-07-24)
+-------------------
+* Merge branch 'indigo_dev' into indigo_release_candidate
+* added apache header
+* ported mimic from python to c++
+* Contributors: Benjamin Maidel, flg-pb
+
+0.6.9 (2017-07-18)
+------------------
+* update license
+* Delete ___init_\_.py
+* Update package.xml
+* remove vlc.py and add it as rosdep dependency (PR to rosdistro is https://github.com/ros/rosdistro/pull/15366)
+* cleanup mimic node
+* - removed hardcoded sleep time between transition between emotions.
+* fix for the flickering in playback, caused when an emotion is set.
+* fix cpu usage of the mimic node
+* manually fix changelog
+* mimic support the rotation of the face
+* Contributors: Felix Messmer, Florian Weisshardt, fmw-ss, ipa-cob4-5, ipa-fxm, ipa-nhg, souravran
+
 0.6.8 (2016-10-10)
 ------------------
 * vlc 2.2 version use by default the wrong video output

@@ -67,7 +67,7 @@ class NodeClass
 		// global variables
 		std::string port;
 		std::string node_name;
-		int baud, scan_id, publish_frequency;
+		int baud, scan_id;
 		bool inverted;
 		double scan_duration, scan_cycle_time;
 		std::string frame_id;
@@ -75,8 +75,8 @@ class NodeClass
 		unsigned int syncedSICKStamp;
 		bool syncedTimeReady;
 		bool debug_;
+		double communication_timeout;
 		ScannerSickS300 scanner_;
-		ros::Time loop_rate_;
 		std_msgs::Bool inStandby_;
 
 		// Constructor
@@ -106,10 +106,10 @@ class NodeClass
 			if(!nh.hasParam("scan_cycle_time")) ROS_WARN("Used default parameter for scan_cycle_time");
 			nh.param("scan_cycle_time", scan_cycle_time, 0.040); //SICK-docu says S300 scans every 40ms
 
-			if (!nh.hasParam("publish_frequency")) ROS_WARN("Used default parameter for publish_frequency");
-			nh.param("publish_frequency", publish_frequency, 12); //Hz
-
 			if(nh.hasParam("debug")) nh.param("debug", debug_, false);
+
+			if(!nh.hasParam("communication_timeout")) ROS_WARN("Used default parameter for communication timeout");
+			nh.param("communication_timeout", communication_timeout, 0.2);
 
 			try
 			{
@@ -178,19 +178,20 @@ class NodeClass
 			topicPub_LaserScan = nh.advertise<sensor_msgs::LaserScan>("scan", 1);
 			topicPub_InStandby = nh.advertise<std_msgs::Bool>("scan_standby", 1);
 			topicPub_Diagnostic_ = nh.advertise<diagnostic_msgs::DiagnosticArray>("/diagnostics", 1);
-
-			loop_rate_ = ros::Time::now(); // Hz
 		}
 
 		bool open() {
 			return scanner_.open(port.c_str(), baud, scan_id);
 		}
 
-		void receiveScan() {
+		bool receiveScan() {
 			std::vector< double > ranges, rangeAngles, intensities;
 			unsigned int iSickTimeStamp, iSickNow;
 
-			if(scanner_.getScan(ranges, rangeAngles, intensities, iSickTimeStamp, iSickNow, debug_))
+			int result = scanner_.getScan(ranges, rangeAngles, intensities, iSickTimeStamp, iSickNow, debug_);
+			static boost::posix_time::ptime point_time_communiaction_ok = boost::posix_time::microsec_clock::local_time();
+
+			if(result)
 			{
 				if(scanner_.isInStandby())
 				{
@@ -203,7 +204,21 @@ class NodeClass
 					publishStandby(false);
 					publishLaserScan(ranges, rangeAngles, intensities, iSickTimeStamp, iSickNow);
 				}
+
+				point_time_communiaction_ok = boost::posix_time::microsec_clock::local_time();
 			}
+			else
+			{
+				boost::posix_time::time_duration diff = boost::posix_time::microsec_clock::local_time() - point_time_communiaction_ok;
+
+				if (diff.total_milliseconds() > static_cast<int>(1000*communication_timeout))
+				{
+					ROS_WARN("Communiaction timeout");
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		// Destructor
@@ -220,10 +235,6 @@ class NodeClass
 		// other function declarations
 		void publishLaserScan(std::vector<double> vdDistM, std::vector<double> vdAngRAD, std::vector<double> vdIntensAU, unsigned int iSickTimeStamp, unsigned int iSickNow)
 		{
-			if(ros::Time::now()-loop_rate_.now()>=ros::Duration(1./publish_frequency))
-				return;
-			loop_rate_ = ros::Time::now();
-
 			// fill message
 			int start_scan, stop_scan;
 			int num_readings = vdDistM.size(); // initialize with max scan size
@@ -255,7 +266,7 @@ class NodeClass
 			laserScan.header.frame_id = frame_id;
 			laserScan.angle_increment = vdAngRAD[start_scan + 1] - vdAngRAD[start_scan];
 			laserScan.range_min = 0.001;
-			laserScan.range_max = 30.0;
+			laserScan.range_max = 29.5; // though the specs state otherwise, the max range reported by the scanner is 29.96m
 			laserScan.time_increment = (scan_duration) / (vdDistM.size());
 
 			// rescale scan
@@ -332,27 +343,32 @@ int main(int argc, char** argv)
 
 	NodeClass nodeClass;
 
-	bool bOpenScan = false;
-	while (!bOpenScan && ros::ok()) {
-		ROS_INFO("Opening scanner... (port:%s)", nodeClass.port.c_str());
+	while (ros::ok())
+	{
+		bool bOpenScan = false;
+		while (!bOpenScan && ros::ok()) {
+			ROS_INFO("Opening scanner... (port:%s)", nodeClass.port.c_str());
 
-		bOpenScan = nodeClass.open();
-		//bOpenScan = sickS300.open(errors, nodeClass.debug_);
+			bOpenScan = nodeClass.open();
 
-		// check, if it is the first try to open scanner
-		if (!bOpenScan) {
-			ROS_ERROR("...scanner not available on port %s. Will retry every second.", nodeClass.port.c_str());
-			nodeClass.publishError("...scanner not available on port");
+			// check, if it is the first try to open scanner
+			if (!bOpenScan) {
+				ROS_ERROR("...scanner not available on port %s. Will retry every second.", nodeClass.port.c_str());
+				nodeClass.publishError("...scanner not available on port");
+			}
+			sleep(1); // wait for scan to get ready if successfull, or wait befor retrying
 		}
-		sleep(1); // wait for scan to get ready if successfull, or wait befor retrying
-	}
-	ROS_INFO("...scanner opened successfully on port %s", nodeClass.port.c_str());
+		ROS_INFO("...scanner opened successfully on port %s", nodeClass.port.c_str());
 
-	// main loop
-	while (ros::ok()) {
-		// read scan
-		nodeClass.receiveScan();
-		ros::spinOnce();
+		// main loop
+		while (ros::ok()) {
+			// read scan
+			if (!nodeClass.receiveScan())
+			{
+				break;
+			}
+			ros::spinOnce();
+		}
 	}
 	return 0;
 }
