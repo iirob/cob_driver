@@ -45,7 +45,7 @@ public:
 
 private:
     // --------------- Types
-    std::shared_ptr<can::ThreadedSocketCANInterface> m_handle;
+    CommInterfaceSharedPtr m_handle;
     can::BufferedReader m_reader;
 
     bool m_bInitialized;
