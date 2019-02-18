@@ -45,7 +45,7 @@ public:
 
 private:
     // --------------- Types
-    CommInterfaceSharedPtr m_handle;
+    can::CommInterfaceSharedPtr m_handle;
     can::BufferedReader m_reader;
 
     bool m_bInitialized;
