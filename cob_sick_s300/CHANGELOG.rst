@@ -2,6 +2,44 @@
 Changelog for package cob_sick_s300
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.12 (2018-07-21)
+-------------------
+* update maintainer
+* Merge pull request `#377 <https://github.com/ipa320/cob_driver/issues/377>`_ from fmessmer/fix_sicks300_rate
+  remove faulty publish_rate mechanism
+* remove faulty publish_rate mechanism
+* Contributors: Felix Messmer, fmessmer, ipa-fxm
+
+0.6.11 (2018-01-07)
+-------------------
+* Merge remote-tracking branch 'origin/indigo_release_candidate' into indigo_dev
+* Merge pull request `#358 <https://github.com/ipa320/cob_driver/issues/358>`_ from ipa-jba/fix/s300-max-range
+  [cob_sick_s300] adjust range_max
+* Merge pull request `#357 <https://github.com/ipa320/cob_driver/issues/357>`_ from ipa-jba/fix/remove-dead-code
+  [cob_sick_s300] remove dead code
+* remove dead code
+* Merge pull request `#341 <https://github.com/ipa320/cob_driver/issues/341>`_ from ipa-fxm/APACHE_license
+  use license apache 2.0
+* use license apache 2.0
+* cob_sick_s300: adjust range_max
+* Contributors: Felix Messmer, ipa-fxm, ipa-mig, ipa-uhr-mk
+
+0.6.10 (2017-07-24)
+-------------------
+
+0.6.9 (2017-07-18)
+------------------
+* [cob_sick_s300] fix typo in Readme
+* cob_sick_s300: clarify some points about the measurement range fields in the readme
+* cob_sick_s300: add readme
+* cob_sick_s300: remove debug print out
+* cob_sick_s300: properly get offsets and add corresponding docu to source code
+* cob_sick_s300: comment warning about field parameters --> this is currently buggy, old version works better
+* cob_sick_s300: move telegram description to telegram parser file
+* cob_sick_s300: clarify telegram calculation according to telegram listing
+* manually fix changelog
+* Contributors: Matthias Gruhler, ipa-fxm, ipa-mig
+
 0.6.8 (2016-10-10)
 ------------------
 

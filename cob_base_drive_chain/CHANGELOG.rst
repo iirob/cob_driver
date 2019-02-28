@@ -2,6 +2,30 @@
 Changelog for package cob_base_drive_chain
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.12 (2018-07-21)
+-------------------
+
+0.6.11 (2018-01-07)
+-------------------
+* Merge remote-tracking branch 'origin/indigo_release_candidate' into indigo_dev
+* Merge pull request `#341 <https://github.com/ipa320/cob_driver/issues/341>`_ from ipa-fxm/APACHE_license
+  use license apache 2.0
+* use license apache 2.0
+* Contributors: Felix Messmer, ipa-fxm, ipa-uhr-mk
+
+0.6.10 (2017-07-24)
+-------------------
+
+0.6.9 (2017-07-18)
+------------------
+* Fix/diagnostic rate (`#329 <https://github.com/ipa320/cob_driver/issues/329>`_)
+  * Turned down global diagnostic rate to 1Hz
+  * Fixed comments
+  * Intermediate
+  * Fixed
+* manually fix changelog
+* Contributors: ipa-fxm, mig-em
+
 0.6.8 (2016-10-10)
 ------------------
 * introduced param to set homing velocity

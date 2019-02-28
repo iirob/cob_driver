@@ -33,13 +33,14 @@
 #include <boost/filesystem.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 
 class Mimic
 {
 public:
     Mimic():
         as_mimic_(nh_, ros::this_node::getName() + "/set_mimic", boost::bind(&Mimic::as_cb_mimic_, this, _1), false),
-        new_mimic_request_(false), dist_(2,10), sim_enabled_(false)
+        new_mimic_request_(false), sim_enabled_(false), real_dist_(2,10), int_dist_(0,6)
     {
         nh_ = ros::NodeHandle("~");
     }
@@ -59,6 +60,14 @@ public:
         sim_enabled_ = nh_.param<bool>("sim", false);
         srvServer_mimic_ = nh_.advertiseService("set_mimic", &Mimic::service_cb_mimic, this);
 
+        random_mimics_.push_back("blinking");
+        random_mimics_.push_back("blinking");
+        random_mimics_.push_back("blinking");
+        random_mimics_.push_back("blinking_left");
+        random_mimics_.push_back("blinking_right");
+
+        int_dist_ = boost::random::uniform_int_distribution<>(0,static_cast<int>(random_mimics_.size())-1);
+
         char const *argv[] =
         {
             "--ignore-config",
@@ -70,16 +79,19 @@ public:
             "--playlist-enqueue",
             "--no-video-title-show",
             "--no-skip-frames",
-            "--no-audio"
+            "--no-audio",
+            "--vout=glx,none"
         };
         int argc = sizeof( argv ) / sizeof( *argv );
 
         vlc_inst_ = libvlc_new(argc, argv);
+        if(!vlc_inst_){ROS_ERROR("failed to create libvlc instance"); return false;}
         vlc_player_ = libvlc_media_player_new(vlc_inst_);
-        if(!sim_enabled_)
-            libvlc_set_fullscreen(vlc_player_, 1);
+        if(!vlc_player_){ROS_ERROR("failed to create vlc media player object"); return false;}
+
+        if(!sim_enabled_){libvlc_set_fullscreen(vlc_player_, 1);}
         set_mimic("default", 1, 1.0, false);
-        blinking_timer_ = nh_.createTimer(ros::Duration(dist_(gen_)), &Mimic::blinking_cb, this, true);
+        blinking_timer_ = nh_.createTimer(ros::Duration(real_dist_(gen_)), &Mimic::blinking_cb, this, true);
         as_mimic_.start();
         return true;
     }
@@ -100,15 +112,21 @@ private:
     boost::mutex mutex_;
 
     boost::random::mt19937 gen_;
-    boost::random::uniform_real_distribution<> dist_;
+    boost::random::uniform_real_distribution<> real_dist_;
+    boost::random::uniform_int_distribution<> int_dist_;
+    std::vector<std::string> random_mimics_;
 
     bool copy_mimic_files()
     {
         char *lgn;
         if((lgn = getlogin()) == NULL)
         {
-            ROS_ERROR("unable to get user name");
-            return false;
+            lgn = getenv("USER");
+            if(lgn == NULL || std::string(lgn) == "")
+            {
+                ROS_ERROR("unable to get user name");
+                return false;
+            }
         }
         std::string username(lgn);
         mimic_folder_ = "/tmp/mimic_" + username;
@@ -149,7 +167,8 @@ private:
         else
             as_mimic_.setAborted();
 
-        blinking_timer_ = nh_.createTimer(ros::Duration(dist_(gen_)), &Mimic::blinking_cb, this, true);
+        if(goal->mimic != "falling_asleep" && goal->mimic != "sleeping")
+            blinking_timer_ = nh_.createTimer(ros::Duration(real_dist_(gen_)), &Mimic::blinking_cb, this, true);
     }
 
     bool service_cb_mimic(cob_mimic::SetMimic::Request &req,
@@ -160,7 +179,8 @@ private:
         res.success = set_mimic(req.mimic, req.repeat, req.speed);
         res.message = "";
 
-        blinking_timer_ = nh_.createTimer(ros::Duration(dist_(gen_)), &Mimic::blinking_cb, this, true);
+        if(req.mimic != "falling_asleep" && req.mimic != "sleeping")
+            blinking_timer_ = nh_.createTimer(ros::Duration(real_dist_(gen_)), &Mimic::blinking_cb, this, true);
         return true;
     }
 
@@ -178,9 +198,17 @@ private:
         // check if mimic exists
         if ( !boost::filesystem::exists(filename) )
         {
-            ROS_ERROR("File not found: %s", filename.c_str());
-            mutex_.unlock();
-            return false;
+            if ( !boost::filesystem::exists(mimic) )
+            {
+                ROS_ERROR("File not found: %s", filename.c_str());
+                mutex_.unlock();
+                return false;
+            }
+            else
+            {
+                ROS_INFO("Playing mimic from non-default file: %s", mimic.c_str());
+                filename = mimic;
+            }
         }
 
         // repeat cannot be 0
@@ -193,31 +221,43 @@ private:
             speed = 1.0;
         }
 
-        libvlc_media_player_set_rate(vlc_player_, speed);
+        // returns -1 if an error was detected, 0 otherwise (but even then, it might not actually work depending on the underlying media protocol)
+        if(libvlc_media_player_set_rate(vlc_player_, speed)!=0){ROS_ERROR("failed to set movie play rate");}
 
         while(repeat > 0)
         {
             vlc_media_ = libvlc_media_new_path(vlc_inst_, filename.c_str());
-
-            if (vlc_media_ != NULL)
+            if(!vlc_media_)
             {
-                libvlc_media_player_set_media(vlc_player_, vlc_media_);
-                libvlc_media_release(vlc_media_);
-                libvlc_media_player_play(vlc_player_);
-                ros::Duration(0.1).sleep();
-                while(blocking && (libvlc_media_player_is_playing(vlc_player_) == 1))
-                {
-                    ros::Duration(0.1).sleep();
-                    ROS_DEBUG("still playing %s", mimic.c_str());
-                    if(new_mimic_request_)
-                    {
-                        ROS_WARN("mimic %s preempted", mimic.c_str());
-                        mutex_.unlock();
-                        return false;
-                    }
-                }
-                repeat --;
+                ROS_ERROR("failed to create media for filepath %s", filename.c_str());
+                mutex_.unlock();
+                return false;
             }
+
+            libvlc_media_player_set_media(vlc_player_, vlc_media_);
+            libvlc_media_release(vlc_media_);
+
+            // returns 0 if playback started (and was already started), or -1 on error. 
+            if(libvlc_media_player_play(vlc_player_)!=0)
+            {
+                ROS_ERROR("failed to play");
+                mutex_.unlock();
+                return false;
+            }
+
+            ros::Duration(0.1).sleep();
+            while(blocking && (libvlc_media_player_is_playing(vlc_player_) == 1))
+            {
+                ros::Duration(0.1).sleep();
+                ROS_DEBUG("still playing %s", mimic.c_str());
+                if(new_mimic_request_)
+                {
+                    ROS_WARN("mimic %s preempted", mimic.c_str());
+                    mutex_.unlock();
+                    return false;
+                }
+            }
+            repeat --;
         }
         mutex_.unlock();
         return true;
@@ -225,8 +265,9 @@ private:
 
     void blinking_cb(const ros::TimerEvent&)
     {
-        set_mimic("blinking", 1, 1.5);
-        blinking_timer_ = nh_.createTimer(ros::Duration(dist_(gen_)), &Mimic::blinking_cb, this, true);
+        int rand = int_dist_(gen_);
+        set_mimic(random_mimics_[rand], 1, 1.5);
+        blinking_timer_ = nh_.createTimer(ros::Duration(real_dist_(gen_)), &Mimic::blinking_cb, this, true);
     }
 
     bool copy_dir( boost::filesystem::path const & source,
@@ -239,7 +280,6 @@ private:
             if(!fs::exists(source) || !fs::is_directory(source))
             {
                 ROS_ERROR_STREAM("Source directory " << source.string() << " does not exist or is not a directory.");
-                             ;
                 return false;
             }
             if(fs::exists(mimic_folder))
