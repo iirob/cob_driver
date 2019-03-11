@@ -5,9 +5,6 @@ find_package(catkin REQUIRED COMPONENTS actionlib_msgs actionlib diagnostic_msgs
 
 find_package(Boost REQUIRED COMPONENTS signals thread)
 
-set(CMAKE_CXX_COMPILER "clang++")
-set(CMAKE_C_COMPILER "clang") 
-
 ### Message Generation ###
 add_message_files(
   FILES
