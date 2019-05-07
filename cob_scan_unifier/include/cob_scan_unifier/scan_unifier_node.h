@@ -28,17 +28,19 @@
 
 // ROS includes
 #include <ros/ros.h>
-#include <tf/transform_listener.h>
-#include <tf/tf.h>
-#include <tf/transform_datatypes.h>
 #include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <laser_geometry/laser_geometry.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
+//includes tf2_ros
+#include <tf2_ros/transform_listener.h>
+
 // ROS message includes
 #include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/point_cloud_conversion.h>
 
 
 //####################
@@ -104,8 +106,9 @@ class ScanUnifierNode
     // declaration of ros publishers
     ros::Publisher topicPub_LaserUnified_;
 
-    // tf listener
-    tf::TransformListener listener_;
+    tf2_ros::Buffer *p_tfBuffer;
+    tf2_ros::TransformListener *p_tfListener;
+    uint _num_transform_errors;
 
     // laser geometry projector
     laser_geometry::LaserProjection projector_;

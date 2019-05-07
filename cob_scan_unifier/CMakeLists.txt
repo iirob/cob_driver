@@ -5,7 +5,8 @@ find_package(catkin REQUIRED COMPONENTS
   laser_geometry
   roscpp
   sensor_msgs
-  tf
+  tf2
+  tf2_ros
 )
 
 catkin_package()
